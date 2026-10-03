@@ -1,0 +1,50 @@
+app:
+  topic: payments
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ledger
+    username: ledger
+    password: ledger
+  sql:
+    init:
+      mode: always
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: payment-processor
+      auto-offset-reset: earliest
+
+      # The single most important line in this file.
+      # Auto-commit fires inside poll() once the interval elapses, committing
+      # offsets for records it already handed you — whether or not you finished
+      # with them. You get loss sometimes and duplicates other times, and which
+      # one depends on load. Turn it off for anything with a side effect.
+      enable-auto-commit: false
+
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.value.default.type: io.github.igaurav3000.idempotency.PaymentEvent
+        spring.json.trusted.packages: io.github.igaurav3000.idempotency
+        isolation.level: read_committed
+        # Keep batches small enough that processing finishes well inside
+        # max.poll.interval.ms (default 5 min). Overrun it and the broker
+        # considers the consumer dead, rebalances the partitions away, and the
+        # eventual commit fails with CommitFailedException.
+        max.poll.records: 50
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+
+    listener:
+      # Commit after the listener returns. This is what makes it at-least-once.
+      ack-mode: record
+
+logging:
+  level:
+    io.github.igaurav3000.idempotency: INFO
