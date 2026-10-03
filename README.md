@@ -51,7 +51,7 @@ What makes it correct is that the marker and the effect **share one transaction*
 
 ```bash
 docker compose up -d
-./mvnw spring-boot:run
+mvn spring-boot:run
 ```
 
 Publish the same event id three times and watch the balance move once.
@@ -59,7 +59,7 @@ Publish the same event id three times and watch the balance move once.
 ## The test
 
 ```bash
-./mvnw test
+mvn test
 ```
 
 `RedeliveryIdempotencyTest` spins up real Kafka and PostgreSQL via Testcontainers — no mocks, since mocking the broker would mock away the thing being tested. It publishes one event id three times, asserts the balance moved once, then holds to confirm the duplicates were genuinely consumed and rejected rather than merely slow to arrive. A second test confirms three distinct events still apply three times, so the dedup isn't just swallowing everything.
